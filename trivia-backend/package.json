@@ -1,0 +1,19 @@
+{
+  "name": "trivia-backend",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index",
+    "dev": "nodemon index"
+  },
+  "author": "kevinchen95ar",
+  "license": "ISC",
+  "dependencies": {
+    "date-fns": "^2.29.1",
+    "express": "^4.18.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.19"
+  }
+}
