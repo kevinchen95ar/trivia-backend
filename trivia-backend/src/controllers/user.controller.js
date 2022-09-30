@@ -2,25 +2,11 @@ const pool = require("../db");
 const bcrypt = require("bcrypt");
 const jwtGenerator = require("../utils/jwtGenerator");
 
-// Trae todos los usuarios -- HAY QUE IMPLEMENTAR EN EL FRONT
+// Trae todos los usuarios
 const getAllUsers = async (req, res) => {
   try {
-    const allUsers = await pool.query("SELECT * FROM users");
+    const allUsers = await pool.query("SELECT id, username, role FROM users");
     res.json(allUsers.rows);
-  } catch (error) {
-    console.log(error.message);
-  }
-};
-
-//Trae un solo usuario con el id que le pasemos en el link -- SIN USO
-const getUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query("SELECT * FROM users WHERE id = $1", [id]);
-    if (result.rows.length === 0)
-      return res.status(404).json({ message: "User not found" });
-
-    res.json(result.rows[0]);
   } catch (error) {
     console.log(error.message);
   }
@@ -50,7 +36,7 @@ const login = async (req, res) => {
     }
 
     //devolvemos un jwt
-    const token = jwtGenerator(user.rows[0].id);
+    const token = jwtGenerator(user.rows[0].id, user.rows[0].role);
     res.json({ token });
   } catch (error) {
     console.log(error.message);
@@ -94,7 +80,7 @@ const createUser = async (req, res) => {
   }
 };
 
-// verifica el usuario
+// verifica el usuario, se verifica en authorization.js
 const verify = async (req, res) => {
   try {
     res.json(true);
@@ -103,28 +89,25 @@ const verify = async (req, res) => {
   }
 };
 
-//Elimina el usuario con el id del link -- SIN USO
-const deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const result = await pool.query("DELETE FROM users WHERE id = $1", [id]);
-    if (result.rowCount === 0) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    return res.sendStatus(204).json({ message: "User deleted" });
-  } catch (error) {
-    res.json({ error: error.message });
-  }
-};
-
-//se puede solo cambiar la contraseña -- HAY QUE IMPLEMENTAR EN EL FRONT
+//Cambio de rol o nombre de usuario
 const updateUser = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { password } = req.body;
+    const { username, role, id } = req.body;
+
+    // Chequeo si existe el usuario
+    const user = await pool.query("SELECT * FROM users WHERE username = $1", [
+      username,
+    ]);
+
+    //Si ya existe y no es el mismo id que estamos consultando devolvemos status 409.
+    if (user.rows.length !== 0 && user.rows[0].id !== id) {
+      return res.status(409).send("Nombre de usuario ya existe");
+    }
+
+    //continuamos actualizando el usuario y el rol a los proveidos
     const result = await pool.query(
-      "UPDATE users SET password = $1 WHERE id = $2 RETURNING *",
-      [password, id]
+      "UPDATE users SET username = $1, role = $2 WHERE id = $3 RETURNING *",
+      [username, role, id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "User not found" });
@@ -137,10 +120,8 @@ const updateUser = async (req, res) => {
 
 module.exports = {
   getAllUsers,
-  getUser,
   login,
   verify,
   createUser,
-  deleteUser,
   updateUser,
 };
