@@ -1,6 +1,11 @@
 const { Router } = require("express");
 
 const {
+  getAllCategories,
+  updateAllCategories,
+} = require("../controllers/category.controller");
+
+const {
   getAllUsers,
   login,
   verify,
@@ -17,5 +22,9 @@ router.post("/login", login);
 router.post("/register", createUser);
 router.get("/is-verify", authorization, verify);
 router.put("/users", updateUser);
+
+//Category routes
+router.get("/category", getAllCategories);
+router.get("/category/update", updateAllCategories);
 
 module.exports = router;
